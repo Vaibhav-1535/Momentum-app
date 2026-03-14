@@ -1,0 +1,24 @@
+name: Extract and Setup
+on:
+  push:
+    paths:
+      - '**.zip'
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract zip
+        run: |
+          unzip momentum_v2.zip
+          cp -r momentum_v2/* .
+          rm -rf momentum_v2 momentum_v2.zip
+      - name: Commit extracted files
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add .
+          git diff --staged --quiet || git commit -m "Extract project files"
+          git push
