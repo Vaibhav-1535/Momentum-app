@@ -12,6 +12,19 @@ jobs:
 
       - name: Create Flutter project structure
         run: |
+         # Create mipmap folders with placeholder icons
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+
+          # Copy default Flutter icon
+          cp /opt/flutter/packages/flutter_tools/templates/app_shared/android.tmpl/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ 2>/dev/null || true
+          cp /opt/flutter/packages/flutter_tools/templates/app_shared/android.tmpl/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ 2>/dev/null || true
+          cp /opt/flutter/packages/flutter_tools/templates/app_shared/android.tmpl/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ 2>/dev/null || true
+          cp /opt/flutter/packages/flutter_tools/templates/app_shared/android.tmpl/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ 2>/dev/null || true
+          cp /opt/flutter/packages/flutter_tools/templates/app_shared/android.tmpl/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ 2>/dev/null || true
           mkdir -p android/app/src/main/kotlin/com/example/momentum
           mkdir -p android/app/src/main/res/drawable
           mkdir -p android/app/src/main/res/values
