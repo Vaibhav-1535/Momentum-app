@@ -1,0 +1,38 @@
+name: momentum
+description: A beautiful To-Do and Habit Tracker app.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.1.1
+
+  # UI Components
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+  fl_chart: ^0.66.0
+  table_calendar: ^3.0.9
+  percent_indicator: ^4.2.3
+  shimmer: ^3.0.0
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.2.2
+  shared_preferences: ^2.2.2
+  equatable: ^2.0.5
+
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
