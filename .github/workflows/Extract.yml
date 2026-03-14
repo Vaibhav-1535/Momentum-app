@@ -1,10 +1,8 @@
-name: Extract and Setup
+name: Setup Flutter Project
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 jobs:
-  extract:
+  setup:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -12,17 +10,162 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract zip and move files
+      - name: Create Flutter project structure
         run: |
-          unzip -o momentum_v2.zip
-          cp -rn momentum_v2/. .
-          rm -rf momentum_v2
-          rm -f momentum_v2.zip
+          mkdir -p android/app/src/main/kotlin/com/example/momentum
+          mkdir -p android/app/src/main/res/drawable
+          mkdir -p android/app/src/main/res/values
+          mkdir -p android/gradle/wrapper
+          mkdir -p lib/models lib/services lib/providers lib/screens lib/widgets lib/utils
 
-      - name: Push extracted files
+          cat > android/settings.gradle << 'GRADLE'
+          pluginManagement {
+              def flutterSdkPath = {
+                  def properties = new Properties()
+                  file("local.properties").withInputStream { properties.load(it) }
+                  def flutterSdkPath = properties.getProperty("flutter.sdk")
+                  assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+                  return flutterSdkPath
+              }()
+              includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          plugins {
+              id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+              id "com.android.application" version "8.1.0" apply false
+              id "org.jetbrains.kotlin.android" version "1.9.10" apply false
+          }
+          include ":app"
+          GRADLE
+
+          cat > android/build.gradle << 'GRADLE'
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.buildDir = "../build"
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+          }
+          subprojects {
+              project.evaluationDependsOn(":app")
+          }
+          tasks.register("clean", Delete) {
+              delete rootProject.buildDir
+          }
+          GRADLE
+
+          cat > android/gradle.properties << 'PROPS'
+          org.gradle.jvmargs=-Xmx1536M
+          android.useAndroidX=true
+          android.enableJetifier=true
+          PROPS
+
+          cat > android/gradle/wrapper/gradle-wrapper.properties << 'PROPS'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.3-all.zip
+          PROPS
+
+          cat > android/app/build.gradle << 'GRADLE'
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+          def localProperties = new Properties()
+          def localPropertiesFile = rootProject.file("local.properties")
+          if (localPropertiesFile.exists()) {
+              localPropertiesFile.withReader("UTF-8") { reader -> localProperties.load(reader) }
+          }
+          def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+          def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
+          android {
+              namespace "com.example.momentum"
+              compileSdkVersion 34
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+              sourceSets { main.java.srcDirs += "src/main/kotlin" }
+              defaultConfig {
+                  applicationId "com.example.momentum"
+                  minSdkVersion 21
+                  targetSdkVersion 34
+                  versionCode flutterVersionCode.toInteger()
+                  versionName flutterVersionName
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+          flutter { source "../.." }
+          dependencies {
+              implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.10"
+          }
+          GRADLE
+
+          cat > android/app/src/main/AndroidManifest.xml << 'XML'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application android:label="Momentum" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">
+                  <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">
+                      <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <meta-data android:name="flutterEmbedding" android:value="2"/>
+              </application>
+          </manifest>
+          XML
+
+          cat > android/app/src/main/kotlin/com/example/momentum/MainActivity.kt << 'KT'
+          package com.example.momentum
+          import io.flutter.embedding.android.FlutterActivity
+          class MainActivity: FlutterActivity()
+          KT
+
+          cat > android/app/src/main/res/values/styles.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+                  <item name="android:windowBackground">@drawable/launch_background</item>
+              </style>
+              <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+                  <item name="android:windowBackground">?android:colorBackground</item>
+              </style>
+          </resources>
+          XML
+
+          cat > android/app/src/main/res/drawable/launch_background.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="@android:color/black"/>
+          </layer-list>
+          XML
+
+          echo "All files created!"
+          ls -la
+
+      - name: Commit files
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git add -A
-          git diff --staged --quiet || git commit -m "Extract project files"
+          git diff --staged --quiet || git commit -m "Add Android project files"
           git push
